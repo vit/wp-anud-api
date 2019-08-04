@@ -7,6 +7,7 @@ class ANUD_REST_Controller extends WP_REST_Controller {
 
     public function register_routes() {
         $namespace = 'anud/v1';
+
         $path = 'route';
         register_rest_route( $namespace, '/' . $path, [
             array(
@@ -14,6 +15,7 @@ class ANUD_REST_Controller extends WP_REST_Controller {
                 'callback'            => array( $this, 'route_handler' ),
             ),
         ]);     
+
         $path = 'route_raw';
         register_rest_route( $namespace, '/' . $path, [
             array(
@@ -21,7 +23,21 @@ class ANUD_REST_Controller extends WP_REST_Controller {
                 'callback'            => array( $this, 'route_raw_handler' ),
             ),
         ]);     
+
+        $path = 'route_raw';
+        register_rest_route( $namespace, '/menu/(?P<menu_name>.+)', [
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'menu_handler' ),
+            ),
+        ]);     
+
     }
+
+
+/*
+ * Handlers
+ */
 
     public function route_handler($request) {
 //        $parameters = $request->get_query_params();
@@ -42,9 +58,15 @@ class ANUD_REST_Controller extends WP_REST_Controller {
         return $this->query_data_by_path($path);
     }
 
-    // ***********************************************************
+    public function menu_handler($request) {
+        return wp_get_nav_menu_items($request['menu_name']);
+    }
 
-    function query_data_by_path($path) {
+/*
+* Protected methods
+*/
+
+    protected function query_data_by_path($path) {
         global $wp;
         global $wp_query;
 
@@ -55,7 +77,7 @@ class ANUD_REST_Controller extends WP_REST_Controller {
         return $wp_query;
     }
 
-    function process_result($data) {
+    protected function process_result($data) {
         $result = array();
         if( $data ) {
             $result['is_singular'] = !!$data->is_singular;
@@ -74,7 +96,7 @@ class ANUD_REST_Controller extends WP_REST_Controller {
         }
     	return $result;
     }
-    function process_post($post) {
+    protected function process_post($post) {
         $result = array();
         if ( ! empty( $post ) ) {
         	$result['ID'] = $post->ID;
@@ -106,7 +128,7 @@ class ANUD_REST_Controller extends WP_REST_Controller {
     	}
     	return $result;
     }
-    function get_path_meta($path) {
+    protected function get_path_meta($path) {
         $result = array();
 
         $sidebar_menu = null;
@@ -146,10 +168,10 @@ class ANUD_REST_Controller extends WP_REST_Controller {
 
         return $result;
     }
-    function split_path($path) {
+    protected function split_path($path) {
         return array_reduce( explode('/', $path), function($acc, $item) { if($item) $acc[] = $item; return $acc; }, array() );
     }
-    function join_path_items($items) {
+    protected function join_path_items($items) {
         return ('/' . join('/', $items) . ( count($items)>0 ? '/' : '' ));
     }
 
