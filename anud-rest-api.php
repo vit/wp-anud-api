@@ -144,7 +144,7 @@ class ANUD_REST_Controller extends WP_REST_Controller {
                 	$item_data['permalink'] = get_permalink($post->ID);
                 	//$item_data['meta'] = get_post_meta($post->ID);
                 	$item_data['sidebar_menu_name'] = get_post_meta($post->ID, 'sidebar_menu', true);
-                	if( $item_data['sidebar_menu_name'] && !$menu) {
+                	if( $item_data['sidebar_menu_name'] && !$sidebar_menu) {
                         //$item_data['sidebar_menu'] = wp_get_nav_menu_items($item_data['sidebar_menu_name']);
                         $sidebar_menu = wp_get_nav_menu_items($item_data['sidebar_menu_name']);
                 	}
