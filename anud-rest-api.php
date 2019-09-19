@@ -24,7 +24,7 @@ class ANUD_REST_Controller extends WP_REST_Controller {
             ),
         ]);     
 
-        $path = 'route_raw';
+        //$path = 'route_raw';
         register_rest_route( $namespace, '/menu/(?P<menu_name>.+)', [
             array(
                 'methods'             => 'GET',
@@ -48,6 +48,8 @@ class ANUD_REST_Controller extends WP_REST_Controller {
     
         $result = $this->process_result($query);
         $result['path_meta'] = $this->get_path_meta($path);
+
+        $result['raw'] = $query;
     
         return $result;
     }
@@ -130,41 +132,98 @@ class ANUD_REST_Controller extends WP_REST_Controller {
     }
     protected function get_path_meta($path) {
         $result = array();
-
+        $result['raw_items'] = [];
+        $result['_cs_replacements'] = null;
+        $result['cs_modifiable'] = get_option( 'cs_modifiable', array() );
+//        $result['wp_get_sidebars_widgets'] = wp_get_sidebars_widgets();
+//_cs_replacements
         $sidebar_menu = null;
+        $sidebar_menu_name = null;
+        $comsep_context_name = null;
+        $comsep_context_path = null;
+
+/*
+//        'themonic-sidebar'
+//        if( is_array($result['_cs_replacements']) ) {
+                ob_start();
+                dynamic_sidebar( 'themonic-sidebar' );
+                $result['sidebar_rendered'] = ob_get_contents();
+                ob_end_clean();
+//        }
+*/
 
         while( count( $path_items = $this->split_path( $path ) ) > 0 ) {
             $item_data = array();
             $query = $this->query_data_by_path($path);
 
             if( $query ) {
-                $post = $query->post;
-                if ( ! empty( $post ) ) {
-                	$item_data['ID'] = $post->ID;
-                	$item_data['permalink'] = get_permalink($post->ID);
-                	//$item_data['meta'] = get_post_meta($post->ID);
-                	$item_data['sidebar_menu_name'] = get_post_meta($post->ID, 'sidebar_menu', true);
-                	if( $item_data['sidebar_menu_name'] && !$sidebar_menu) {
-                        //$item_data['sidebar_menu'] = wp_get_nav_menu_items($item_data['sidebar_menu_name']);
-                        $sidebar_menu = wp_get_nav_menu_items($item_data['sidebar_menu_name']);
-                	}
+                $page_type = null;
+                $custom_menu_name = null;
+                if( $query->is_posts_page ) {
+                    $page_type = "news_list";
+                }
+                if( self::OPTIONS_BY_TYPE[$page_type] && self::OPTIONS_BY_TYPE[$page_type]['custom_menu'] ) {
+                    $custom_menu_name = self::OPTIONS_BY_TYPE[$page_type]['custom_menu'];
                 }
 
+                $post = $query->post;
+                if ( $query->is_singular && ! empty( $post ) ) {
+                	$item_data['ID'] = $post->ID;
+                	$item_data['permalink'] = get_permalink($post->ID);
+
+//                	$item_data['sidebar_menu_name'] = get_post_meta($post->ID, 'sidebar_menu', true);
+
+                    if( !$sidebar_menu_name ) {
+                        $sidebar_menu_name = get_post_meta($post->ID, 'sidebar_menu', true);
+                    }
+/*
+                    if( !$sidebar_menu_name ) {
+                        $sidebar_menu_name = $custom_menu_name;
+                    }
+*/
+                    if( !$comsep_context_name ) {
+                        $comsep_context_name = get_post_meta($post->ID, 'comsep_context', true);
+                        if( $comsep_context_name )
+                            $comsep_context_path = '/' . join('/', $path_items) . '/';
+                    }
+
+                	if( !$result['_cs_replacements'] ) {
+                	    $result['_cs_replacements'] = get_post_meta($post->ID, '_cs_replacements', true);
+                	}
+                }
+                if( !$sidebar_menu_name ) {
+                    $sidebar_menu_name = $custom_menu_name;
+                }
             }
 
-//            $result[] = array( 'path' => $path, 'data' => $item_data );
 
             $item = array_pop( $path_items );
             $path = $this->join_path_items($path_items);
         }
 
-//        $path_items = $this->split_path( $path );
-//        $path_joined = $this->join_path_items($path_items);
-
-//        $result['path_items'] = $path_items;
-//        $result['path_joined'] = $path_joined;
+///*
+    	if( $sidebar_menu_name ) {
+            $sidebar_menu = wp_get_nav_menu_items( $sidebar_menu_name );
+    	}
+//*/
 
         $result['sidebar_menu'] = $sidebar_menu;
+        $result['comsep_context_name'] = $comsep_context_name;
+        $result['comsep_context_path'] = $comsep_context_path;
+
+/*
+//        'themonic-sidebar'
+        if( is_array($result['_cs_replacements']) ) {
+            $widgets = wp_get_sidebars_widgets();
+            $sidebar_name = $result['_cs_replacements']['themonic-sidebar'];
+            if( $sidebar_name ) {
+                ob_start();
+                dynamic_sidebar( $sidebar_name );
+                $result['sidebar_rendered'] = ob_get_contents();
+                ob_end_clean();
+            }
+        }
+*/
 
         return $result;
     }
@@ -174,6 +233,14 @@ class ANUD_REST_Controller extends WP_REST_Controller {
     protected function join_path_items($items) {
         return ('/' . join('/', $items) . ( count($items)>0 ? '/' : '' ));
     }
+
+///*
+    const OPTIONS_BY_TYPE = array(
+        'news_list' => array(
+            'custom_menu' => 'fe_news_menu'
+        )
+    );
+//*/
 
 }
 
