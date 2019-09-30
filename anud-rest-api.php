@@ -184,7 +184,16 @@ class ANUD_REST_Controller extends WP_REST_Controller {
                     if( !$comsep_context_name ) {
                         $comsep_context_name = get_post_meta($post->ID, 'comsep_context', true);
                         if( $comsep_context_name )
-                            $comsep_context_path = '/' . join('/', $path_items) . '/';
+                            $comsep_context_path = $path;
+//                            $comsep_context_path = '/' . join('/', $path_items) . '/';
+/*
+                        else {
+                            if('/library/==$path') {
+                                $comsep_context_name = 'lib';
+                                $comsep_context_path = $path;
+                            }
+                        }
+*/
                     }
 
                 	if( !$result['_cs_replacements'] ) {
@@ -193,6 +202,14 @@ class ANUD_REST_Controller extends WP_REST_Controller {
                 }
                 if( !$sidebar_menu_name ) {
                     $sidebar_menu_name = $custom_menu_name;
+                }
+            }
+
+
+            if( !$comsep_context_name ) {
+                if('/library/'==$path) {
+                    $comsep_context_name = 'lib';
+                    $comsep_context_path = $path;
                 }
             }
 
